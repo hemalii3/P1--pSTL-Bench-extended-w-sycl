@@ -136,7 +136,7 @@ print(f"Saved {kw_csv}")
 
 sig_count = kw_df["significant"].sum() if not kw_df.empty else 0
 total     = len(kw_df)
-      f"significant wg_size effect (p < 0.05)")
+# KW print suppressed
 
 COLORS = plt.cm.tab10.colors
 
@@ -160,7 +160,7 @@ for algo in sorted(ALGORITHMS):
     ax.set_yscale("log")
     ax.set_xlabel("Input size (elements)")
     ax.set_ylabel("Median time (ms)")
-    ax.set_title(f"SYCL wg_size comparison — sycl::{algo}", fontsize=13)
+    ax.set_title(f"SYCL wg_size comparison - sycl::{algo}", fontsize=13)
     ax.legend(title="work-group size", fontsize=8)
     ax.grid(True, which="both", alpha=0.3)
     plt.tight_layout()
@@ -190,7 +190,7 @@ if not pairwise_df.empty:
         plt.colorbar(im, ax=ax, label="Mean relative diff (%)")
         ax.set_xticks(range(n)); ax.set_xticklabels(wgs, rotation=45, ha="right")
         ax.set_yticks(range(n)); ax.set_yticklabels(wgs)
-        ax.set_title(f"wg_size pairwise diff — sycl::{algo}", fontsize=12)
+        ax.set_title(f"wg_size pairwise diff - sycl::{algo}", fontsize=12)
 
         for i in range(n):
             for j in range(n):
