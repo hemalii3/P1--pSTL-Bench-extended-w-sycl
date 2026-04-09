@@ -1,3 +1,152 @@
+# What Added to existing pSTL-Bench 
+
+ file describes everything added to  existing pSTL-Bench repository for P1. The base repo is: https://github.com/parlab-tuwien/pSTL-Bench
+
+---
+
+## 1. SYCL Backend
+
+5 new algorithm implementations using Intel DPC++ (icpx) and SYCL nd_range kernels.
+files are in `include/pstl/benchmarks/<algorithm>/`.
+
+### `include/pstl/benchmarks/find/find_sycl.h`
+explicit nd_range kernel. work-item checks one element and uses
+`sycl::atomic_ref::fetch_min` to record the earliest match index.
+w-group size is passed directly as the nd_range local size.
+
+### `include/pstl/benchmarks/for_each/for_each_sycl.h`
+explicit nd_range kernel. Each work-item applies the kernel function to one
+element. 
+w-group size is passed directly as the nd_range local size.
+
+### `include/pstl/benchmarks/reduce/reduce_sycl.h`
+explicit nd_range kernel with local memory reduction.  work-group reduces
+ chunk into local memory, then the partial results combined.
+w-group size is passed directly as the nd_range local size.
+
+### `include/pstl/benchmarks/inclusive_scan/inclusive_scan_sycl.h`
+delgates to `oneapi::dpl::inclusive_scan` with a SYCL execution policy. oneDPL uses own internal config. compile-time wg_size parameter is not used by oneDPL here. goalis to write it better for gpu
+### `include/pstl/benchmarks/sort/sort_sycl.h`
+delegates to `oneapi::dpl::sort` with a SYCL execution policy.
+oneDPL uses own internal radix sort. The compile-time wg_size parameter
+is not used. confirmed w binary inspection showing oneDPL hardcodes its own
+value. goal is same as inclusive scan.
+
+---
+
+## 2. Shared SYCL Utilities
+
+### `include/pstl/utils/sycl_utils.h` (new file)
+3 utilities shared across all SYCL algorithm implementations:
+
+```cpp
+// Wg size - set at compile time via -DPSTL_BENCH_SYCL_WG_SIZE=N
+// Default is 256
+constexpr size_t wg_size = PSTL_BENCH_SYCL_WG_SIZE;
+
+// Rounds up global size to be a multiple of wg_size
+// Required for nd_range kernels
+inline size_t round_up_global_size(size_t n);
+
+// Shared SYCL queue using default_selector_v
+// Single queue instance reused across all kernels
+inline sycl::queue & get_queue();
+```
+
+---
+
+## 3. CMake Backend File
+
+### `cmake/backends/SYCL.cmake` (new)
+enables SYCL compilation with Intel DPC++:
+- Sets `PSTL_BENCH_USE_SYCL` and `PSTL_BENCH_BACKEND="SYCL"` compile definitions
+- Adds `-fsycl` compile and link flags
+
+### `CMakeLists.txt` modified
+Added work-group size parameter:
+```cmake
+if (NOT DEFINED PSTL_BENCH_SYCL_WG_SIZE)
+    set(PSTL_BENCH_SYCL_WG_SIZE 256 CACHE STRING "SYCL work-group size")
+endif()
+add_compile_definitions(PSTL_BENCH_SYCL_WG_SIZE=${PSTL_BENCH_SYCL_WG_SIZE})
+```
+passes the wg_size value from CMake configure time through to the compiler
+preprocessor, where `sycl_utils.h` picks it up as a compile-time constant.
+
+---
+
+## 4. build and run Scripts
+
+### `build_baselines.sh` (new)
+builds TBB, GNU, and HPX backends into `~/pstl-builds/` outside the repo.
+
+### `build_all_wg.sh` (new)
+builds 6 SYCL variants with different work-group sizes:
+```bash
+for WG in 32 64 128 256 512 1024; do
+    cmake -DPSTL_BENCH_BACKEND=SYCL \
+          -DCMAKE_CXX_COMPILER=icpx \
+          -DPSTL_BENCH_SYCL_WG_SIZE=$WG \
+          -S . -B ~/pstl-builds/sycl-wg${WG}
+done
+```
+each produces a separate binary with a different compile-time wg_size.
+Verified via CMakeCache and md5sum that all 6 binaries are genuinely different.
+
+### `run_baselines.sh` (new)
+runs TBB, GNU, HPX benchmarks with:
+- Filter: `std::(find|for_each|inclusive_scan|reduce|sort)/` (exact match, avoids
+  adjacent_find, partial_sort, transform_reduce etc)
+- 10 repetitions per benchmark
+- 1s minimum time per benchmark
+- Output: `results/tbb.json`, `results/gnu.json`, `results/hpx.json`
+
+### `run_all_wg.sh` (new)
+runs all 6 SYCL wg_size variants with the same settings.
+Output: `results/sycl_wg32.json` through `results/sycl_wg1024.json`
+
+### `reproduce.sh` (new)
+ script: build → run → analyse. Supports `--skip-build` and
+`--skip-run` flags to skip phases when binaries or results already exist.
+
+---
+
+## 5. Analysis and Plot Scripts
+
+### `plot_results_stats.py` (new)
+main plot script for the paper. Loads all 9 JSON files (TBB, GNU, HPX,
+SYCL wg32-1024), computes median and IQR from the 10 repetitions per benchmark,
+and generates one plot per algorithm with error bands.
+op: `plots_stats/` - 5 PNG files + `summary_stats.csv`
+
+warns when coefficient of variation exceeds 5% (high noise indicator).
+
+### `compare_wg_sizes.py` (new)
+wg_size analysis script. Loads the 6 SYCL JSON files and produces:
+- Overlay plots: all 6 wg_size variants on one chart per algorithm
+- Heatmaps: pairwise mean relative difference between wg_size variants
+  false positives at small N due to kernel launch overhead noise
+
+op: `plots_wg_compare/` - 10 PNG files + 2 CSV files
+
+### `run_analysis.sh` (new)
+run `plot_results_stats.py` and `compare_wg_sizes.py` in sequence.
+
+---
+
+## 6. Results
+
+`results/` directory contains JSON benchmark output for all 9 backends:
+- `tbb.json`, `gnu.json`, `hpx.json` - baseline backends
+- `sycl_wg32.json` through `sycl_wg1024.json` - SYCL variants
+
+All results use 10 repetitions. Benchmark names follow  format:
+`GNU-TBB/std::find/double/<size>/manual_time` (baseline)
+`IntelLLVM-SYCL/sycl::find/double/<size>/manual_time` (SYCL)
+
+---
+
+
 # pSTL-Bench
 
 pSTL-Bench is a benchmark suite designed to assist developers in evaluating the most suitable parallel
