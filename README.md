@@ -113,7 +113,7 @@ Output: `results/sycl_wg32.json` through `results/sycl_wg1024.json`
 ## 5. Analysis and Plot Scripts
 
 ### `plot_results_stats.py` (new)
-main plot script for the paper. Loads all 9 JSON files (TBB, GNU, HPX,
+main plot script for the project. Loads all 9 JSON files (TBB, GNU, HPX,
 SYCL wg32-1024), computes median and IQR from the 10 repetitions per benchmark,
 and generates one plot per algorithm with error bands.
 op: `plots_stats/` - 5 PNG files + `summary_stats.csv`
