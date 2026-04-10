@@ -118,7 +118,7 @@ SYCL wg32-1024), computes median and IQR from the 10 repetitions per benchmark,
 and generates one plot per algorithm with error bands.
 op: `plots_stats/` - 5 PNG files + `summary_stats.csv`
 
-warns when coefficient of variation exceeds 5% (high noise indicator).
+warns when coefficient of variation exceeds 5%
 
 ### `compare_wg_sizes.py` (new)
 wg_size analysis script. Loads the 6 SYCL JSON files and produces:
