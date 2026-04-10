@@ -95,8 +95,7 @@ Verified via CMakeCache and md5sum that all 6 binaries are genuinely different.
 
 ### `run_baselines.sh` (new)
 runs TBB, GNU, HPX benchmarks with:
-- Filter: `std::(find|for_each|inclusive_scan|reduce|sort)/` (exact match, avoids
-  adjacent_find, partial_sort, transform_reduce etc)
+- Filter: `std::(find|for_each|inclusive_scan|reduce|sort)/` (
 - 10 repetitions per benchmark
 - 1s minimum time per benchmark
 - Output: `results/tbb.json`, `results/gnu.json`, `results/hpx.json`
