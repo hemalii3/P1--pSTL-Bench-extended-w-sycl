@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 SOURCES = [
     ("results/tbb.json",         "TBB"),
     ("results/gnu.json",         "GNU"),
-    ("results/hpx.json",         "HPX"),
     ("results/sycl_wg32.json",   "SYCL-wg32"),
     ("results/sycl_wg64.json",   "SYCL-wg64"),
     ("results/sycl_wg128.json",  "SYCL-wg128"),
@@ -17,7 +16,7 @@ SOURCES = [
     ("results/sycl_wg1024.json", "SYCL-wg1024"),
 ]
 
-ALGORITHMS = {"find", "for_each", "inclusive_scan", "reduce", "sort"}
+ALGORITHMS = {"find", "for_each", "inclusive_scan", "reduce"}
 OUT_DIR = "plots_stats"
 CV_WARN_THRESHOLD = 0.05  
 
