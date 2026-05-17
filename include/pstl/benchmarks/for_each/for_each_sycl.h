@@ -14,9 +14,9 @@ namespace benchmark_for_each {
         const size_t wg = pstl::sycl_utils::wg_size;
         if (usm_cache::d_in.find(n) == usm_cache::d_in.end()) {
             usm_cache::d_in[n] = sycl::malloc_device<pstl::elem_t>(n, q);
-            q.memcpy(usm_cache::d_in[n], input.data(), n * sizeof(pstl::elem_t)).wait();
         }
         pstl::elem_t* d = usm_cache::d_in[n];
+        q.memcpy(d, input.data(), n * sizeof(pstl::elem_t)).wait();
         q.submit([&](sycl::handler & h) {
             h.parallel_for(sycl::nd_range<1>(global, wg), [=](sycl::nd_item<1> it) {
                 const size_t i = it.get_global_id(0);

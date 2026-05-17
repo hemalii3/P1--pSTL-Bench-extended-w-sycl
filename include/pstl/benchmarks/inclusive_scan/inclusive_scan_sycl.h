@@ -20,9 +20,9 @@ namespace benchmark_inclusive_scan {
             usm_cache::d_out[n] = sycl::malloc_device<pstl::elem_t>(n, q);
             usm_cache::d_tmp[n] = sycl::malloc_device<pstl::elem_t>(p, q);
             usm_cache::padded[n] = p;
-            q.memcpy(usm_cache::d_in[n], input.data(), n * sizeof(pstl::elem_t)).wait();
         }
         pstl::elem_t* di = usm_cache::d_in[n];
+        q.memcpy(di, input.data(), n * sizeof(pstl::elem_t)).wait();
         pstl::elem_t* dout = usm_cache::d_out[n];
         pstl::elem_t* dt = usm_cache::d_tmp[n];
         q.submit([&](sycl::handler & h) {

@@ -16,10 +16,10 @@ namespace benchmark_reduce {
         if (usm_cache::d_in.find(n) == usm_cache::d_in.end()) {
             usm_cache::d_in[n]  = sycl::malloc_device<pstl::elem_t>(n, q);
             usm_cache::d_res[n] = sycl::malloc_device<pstl::elem_t>(1, q);
-            q.memcpy(usm_cache::d_in[n], input.data(), n * sizeof(pstl::elem_t)).wait();
         }
         pstl::elem_t* d = usm_cache::d_in[n];
         pstl::elem_t* r = usm_cache::d_res[n];
+        q.memcpy(d, input.data(), n * sizeof(pstl::elem_t)).wait();
         pstl::elem_t result = 0;
         q.memcpy(r, &result, sizeof(pstl::elem_t)).wait();
         q.submit([&](sycl::handler & h) {
